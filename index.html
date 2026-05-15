@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZombieStrike 3D — Survival</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- =============================================
+         GAME CANVAS — Three.js renders here
+         ============================================= -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- =============================================
+         HUD OVERLAY — Health, Ammo, Kills, Minimap
+         ============================================= -->
+    <div id="ui-overlay">
+
+        <!-- Crosshair -->
+        <div id="crosshair">
+            <div class="ch-h"></div>
+            <div class="ch-v"></div>
+            <div class="ch-dot"></div>
+        </div>
+
+        <!-- Bottom HUD bar -->
+        <div id="hud">
+
+            <!-- Health Block -->
+            <div class="hud-block" id="health-block">
+                <div class="hud-label">HEALTH</div>
+                <div id="health-bar-bg">
+                    <div id="health-bar"></div>
+                </div>
+                <div id="health-text">100</div>
+            </div>
+
+            <!-- Stamina Block -->
+            <div class="hud-block" id="stamina-block">
+                <div class="hud-label">STAMINA</div>
+                <div id="stamina-bar-bg">
+                    <div id="stamina-bar"></div>
+                </div>
+            </div>
+
+            <!-- Ammo Block -->
+            <div class="hud-block" id="ammo-block">
+                <div class="hud-label">AMMO</div>
+                <div id="ammo-display">
+                    <span id="ammo-current">30</span>
+                    <span class="ammo-sep">/</span>
+                    <span id="ammo-reserve">90</span>
+                </div>
+            </div>
+
+            <!-- Spacer -->
+            <div style="flex:1"></div>
+
+            <!-- Kills Block -->
+            <div class="hud-block" id="kills-block">
+                <div class="hud-label">KILLS</div>
+                <div id="kills-count">0</div>
+            </div>
+
+            <!-- Wave Block -->
+            <div class="hud-block" id="wave-block">
+                <div class="hud-label">WAVE</div>
+                <div id="wave-number">1</div>
+            </div>
+
+        </div><!-- end #hud -->
+
+        <!-- Minimap (top-right) -->
+        <div id="minimap-wrap">
+            <canvas id="minimap-canvas" width="160" height="160"></canvas>
+            <div class="hud-label" style="text-align:center;margin-top:4px;">MAP</div>
+        </div>
+
+        <!-- Flashlight indicator (top-center, hidden by default) -->
+        <div id="flashlight-hud">🔦 <span id="fl-text">OFF</span></div>
+
+        <!-- Reload indicator -->
+        <div id="reload-hud">RELOADING...</div>
+
+        <!-- Damage vignette overlay -->
+        <div id="damage-vignette"></div>
+
+        <!-- Hit marker (briefly shown on kill) -->
+        <div id="hit-marker">✕</div>
+
+        <!-- Notification banner -->
+        <div id="notification"></div>
+
+        <!-- Bottom hint strip -->
+        <div id="controls-hint">
+            WASD · Move &nbsp;|&nbsp; SHIFT · Sprint &nbsp;|&nbsp; SPACE · Jump &nbsp;|&nbsp;
+            F · Flashlight &nbsp;|&nbsp; CLICK · Shoot &nbsp;|&nbsp; R · Reload &nbsp;|&nbsp; ESC · Pause
+        </div>
+
+    </div><!-- end #ui-overlay -->
+
+
+    <!-- =============================================
+         LOADING SCREEN
+         ============================================= -->
+    <div id="loading-screen">
+        <div class="loading-inner">
+            <div class="loading-title">ZOMBIE<br>STRIKE</div>
+            <div class="loading-sub">3D SURVIVAL</div>
+            <div class="loading-bar-bg">
+                <div id="loading-bar"></div>
+            </div>
+            <div id="loading-msg">Initializing engine…</div>
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         START MENU
+         ============================================= -->
+    <div id="start-menu" class="screen hidden">
+        <div class="menu-card">
+            <div class="menu-logo">
+                <span class="logo-zombie">ZOMBIE</span>
+                <span class="logo-strike">STRIKE</span>
+                <span class="logo-3d">3D SURVIVAL</span>
+            </div>
+            <div class="btn-group">
+                <button id="start-btn"        class="mbtn primary">▶  START GAME</button>
+                <button id="how-to-play-btn"  class="mbtn">?  HOW TO PLAY</button>
+            </div>
+            <div class="menu-foot">Three.js · cannon-es · WebGL</div>
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         HOW TO PLAY SCREEN
+         ============================================= -->
+    <div id="how-to-play" class="screen hidden">
+        <div class="menu-card">
+            <h2>HOW TO PLAY</h2>
+            <table class="key-table">
+                <tr><td><kbd>W A S D</kbd></td><td>Move</td></tr>
+                <tr><td><kbd>SHIFT</kbd></td>  <td>Sprint (drains stamina)</td></tr>
+                <tr><td><kbd>SPACE</kbd></td>  <td>Jump</td></tr>
+                <tr><td><kbd>F</kbd></td>       <td>Toggle flashlight</td></tr>
+                <tr><td><kbd>CLICK</kbd></td>  <td>Shoot</td></tr>
+                <tr><td><kbd>R</kbd></td>       <td>Reload magazine</td></tr>
+                <tr><td><kbd>ESC</kbd></td>    <td>Pause</td></tr>
+            </table>
+            <p class="tip">Survive waves of zombies · Each wave spawns more enemies.<br>
+               Zombies deal damage on contact · Headshots do 2× damage.</p>
+            <div class="btn-group">
+                <button id="back-btn" class="mbtn">← BACK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         PAUSE MENU
+         ============================================= -->
+    <div id="pause-menu" class="screen hidden">
+        <div class="menu-card">
+            <h2>PAUSED</h2>
+            <div class="btn-group">
+                <button id="resume-btn"  class="mbtn primary">▶  RESUME</button>
+                <button id="restart-btn" class="mbtn">↺  RESTART</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         GAME OVER SCREEN
+         ============================================= -->
+    <div id="gameover-screen" class="screen hidden">
+        <div class="menu-card">
+            <h2 class="gameover-title">☠ GAME OVER</h2>
+            <div class="stats-grid">
+                <div class="stat-row">
+                    <span class="stat-label">ZOMBIES KILLED</span>
+                    <span class="stat-val" id="final-kills">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">WAVE REACHED</span>
+                    <span class="stat-val" id="final-wave">1</span>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button id="play-again-btn" class="mbtn primary">▶  PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         CDN LIBRARIES (non-module, loaded as globals)
+         GSAP  → window.gsap
+         Howler → window.Howl / window.Howler
+         ============================================= -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"
+            crossorigin="anonymous"></script>
+
+
+    <!-- =============================================
+         ES MODULE IMPORT MAP
+         Maps bare specifiers to CDN URLs.
+         three      → Three.js r160 ES module
+         cannon-es  → cannon-es 0.20.0 ES module
+         ============================================= -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three":          "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/":  "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "cannon-es":      "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+        }
+    }
+    </script>
+
+    <!-- Main game entry point (ES module, always deferred) -->
+    <script type="module" src="main.js"></script>
+
+</body>
+</html>
