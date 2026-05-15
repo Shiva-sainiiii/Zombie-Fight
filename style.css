@@ -1,0 +1,538 @@
+/* ================================================
+   ZOMBIE STRIKE 3D — MASTER STYLESHEET
+   Dark cyberpunk survival aesthetic
+   ================================================ */
+
+/* ---- CSS Variables (design tokens) ---- */
+:root {
+    --green:   #00ff88;
+    --red:     #ff2233;
+    --orange:  #ff9900;
+    --blue:    #0088ff;
+    --dark:    #07080f;
+    --darker:  #040508;
+    --panel:   rgba(4, 8, 20, 0.88);
+    --border:  rgba(0, 255, 136, 0.25);
+    --font:    'Courier New', Courier, monospace;
+    --glow-g:  0 0 12px rgba(0,255,136,0.5);
+    --glow-r:  0 0 12px rgba(255,34,51,0.6);
+}
+
+/* ---- Reset ---- */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+    width:100%; height:100%;
+    background:#000;
+    overflow:hidden;
+    font-family: var(--font);
+    user-select:none;
+    cursor:none;           /* Hide default cursor — crosshair replaces it */
+}
+
+/* ================================================
+   CANVAS
+   ================================================ */
+#gameCanvas {
+    display:block;
+    width:100vw;
+    height:100vh;
+    position:fixed;
+    top:0; left:0;
+}
+
+/* ================================================
+   UI OVERLAY — sits on top of canvas, no pointer events
+   except where explicitly enabled
+   ================================================ */
+#ui-overlay {
+    position:fixed;
+    inset:0;
+    pointer-events:none;   /* Don't block mouse clicks on canvas */
+    z-index:10;
+}
+
+/* ================================================
+   CROSSHAIR
+   ================================================ */
+#crosshair {
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:28px; height:28px;
+}
+
+/* Horizontal line */
+.ch-h {
+    position:absolute;
+    width:22px; height:2px;
+    background:rgba(255,255,255,0.85);
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 4px rgba(255,255,255,0.4);
+}
+
+/* Vertical line */
+.ch-v {
+    position:absolute;
+    width:2px; height:22px;
+    background:rgba(255,255,255,0.85);
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 4px rgba(255,255,255,0.4);
+}
+
+/* Centre dot (accent colour) */
+.ch-dot {
+    position:absolute;
+    width:4px; height:4px;
+    background:var(--green);
+    border-radius:50%;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    box-shadow:var(--glow-g);
+}
+
+/* ================================================
+   HUD — bottom bar
+   ================================================ */
+#hud {
+    position:absolute;
+    bottom:0; left:0; right:0;
+    display:flex;
+    align-items:flex-end;
+    gap:24px;
+    padding:16px 20px;
+    background:linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+}
+
+.hud-block {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.hud-label {
+    font-size:9px;
+    letter-spacing:3px;
+    color:var(--green);
+    opacity:0.65;
+    text-transform:uppercase;
+}
+
+/* Health bar */
+#health-bar-bg {
+    width:180px; height:10px;
+    background:rgba(255,0,0,0.12);
+    border:1px solid rgba(255,50,50,0.35);
+    border-radius:2px;
+    overflow:hidden;
+}
+#health-bar {
+    height:100%;
+    width:100%;
+    background:linear-gradient(90deg, #b30000, #ff3344);
+    border-radius:2px;
+    transition:width 0.25s ease, background 0.5s;
+}
+#health-text {
+    font-size:11px;
+    color:#ff5566;
+    text-shadow:0 0 8px #ff0022;
+    letter-spacing:1px;
+}
+
+/* Stamina bar */
+#stamina-bar-bg {
+    width:110px; height:6px;
+    background:rgba(0,136,255,0.12);
+    border:1px solid rgba(0,136,255,0.3);
+    border-radius:2px;
+    overflow:hidden;
+}
+#stamina-bar {
+    height:100%;
+    width:100%;
+    background:linear-gradient(90deg, #004499, #0088ff);
+    border-radius:2px;
+    transition:width 0.08s linear;
+}
+
+/* Ammo counter */
+#ammo-display {
+    font-size:24px;
+    letter-spacing:2px;
+    line-height:1;
+}
+#ammo-current { color:var(--orange); text-shadow:0 0 8px rgba(255,153,0,0.5); }
+.ammo-sep     { color:rgba(255,255,255,0.25); font-size:16px; margin:0 4px; }
+#ammo-reserve { font-size:14px; color:rgba(255,255,255,0.45); }
+
+/* Kill counter */
+#kills-count {
+    font-size:32px;
+    color:var(--green);
+    text-shadow:var(--glow-g);
+    letter-spacing:2px;
+    line-height:1;
+}
+
+/* Wave indicator */
+#wave-number {
+    font-size:32px;
+    color:var(--orange);
+    text-shadow:0 0 14px rgba(255,153,0,0.6);
+    letter-spacing:2px;
+    line-height:1;
+}
+
+/* ================================================
+   MINIMAP
+   ================================================ */
+#minimap-wrap {
+    position:absolute;
+    top:18px; right:18px;
+}
+#minimap-canvas {
+    display:block;
+    width:160px; height:160px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    background:rgba(0,5,18,0.75);
+    box-shadow:0 0 20px rgba(0,0,0,0.6);
+}
+
+/* ================================================
+   HUD INDICATORS
+   ================================================ */
+
+/* Flashlight toggle hint */
+#flashlight-hud {
+    position:absolute;
+    top:18px; left:50%;
+    transform:translateX(-50%);
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:4px 16px;
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--green);
+    opacity:0;
+    transition:opacity 0.3s;
+}
+#flashlight-hud.show { opacity:1; }
+
+/* Reload indicator */
+#reload-hud {
+    position:absolute;
+    bottom:90px; left:50%;
+    transform:translateX(-50%);
+    background:var(--panel);
+    border:1px solid rgba(255,153,0,0.4);
+    border-radius:20px;
+    padding:5px 20px;
+    font-size:11px;
+    letter-spacing:4px;
+    color:var(--orange);
+    opacity:0;
+    transition:opacity 0.2s;
+}
+#reload-hud.show { opacity:1; }
+
+/* Damage vignette — red edges flash when taking damage */
+#damage-vignette {
+    position:absolute;
+    inset:0;
+    border-radius:0;
+    background:radial-gradient(ellipse at center, transparent 55%, rgba(255,0,30,0.55) 100%);
+    opacity:0;
+    transition:opacity 0.08s;
+    pointer-events:none;
+}
+#damage-vignette.flash { opacity:1; }
+
+/* Hit marker — briefly visible on hit */
+#hit-marker {
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    font-size:18px;
+    color:#ff4444;
+    text-shadow:0 0 8px #ff0000;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.05s;
+}
+#hit-marker.show { opacity:1; }
+
+/* Notification banner */
+#notification {
+    position:absolute;
+    top:28%; left:50%;
+    transform:translateX(-50%);
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:10px 28px;
+    font-size:14px;
+    letter-spacing:3px;
+    color:var(--green);
+    text-shadow:var(--glow-g);
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.3s;
+}
+#notification.show { opacity:1; }
+
+/* Controls hint strip */
+#controls-hint {
+    position:absolute;
+    bottom:4px; left:50%;
+    transform:translateX(-50%);
+    font-size:9px;
+    color:rgba(255,255,255,0.18);
+    letter-spacing:1px;
+    white-space:nowrap;
+}
+
+/* ================================================
+   MENU SCREENS — full-screen overlays
+   ================================================ */
+.screen {
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    background:rgba(0,0,0,0.82);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+}
+.screen.hidden { display:none; }
+
+/* Menu card */
+.menu-card {
+    width:380px;
+    padding:44px 40px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    text-align:center;
+    box-shadow:
+        0 0 60px rgba(0,0,0,0.8),
+        inset 0 0 60px rgba(0,5,20,0.5);
+}
+
+/* ---- Logo / Title ---- */
+.menu-logo { margin-bottom:36px; }
+
+.logo-zombie {
+    display:block;
+    font-size:54px;
+    font-weight:900;
+    letter-spacing:10px;
+    color:var(--red);
+    text-shadow:0 0 24px rgba(255,34,51,0.7), 0 0 60px rgba(255,0,0,0.3);
+    line-height:1;
+}
+.logo-strike {
+    display:block;
+    font-size:54px;
+    font-weight:900;
+    letter-spacing:10px;
+    color:#ffffff;
+    text-shadow:0 0 20px rgba(255,255,255,0.4);
+    line-height:1.15;
+}
+.logo-3d {
+    display:block;
+    font-size:12px;
+    letter-spacing:7px;
+    color:var(--green);
+    text-shadow:var(--glow-g);
+    margin-top:8px;
+}
+
+/* ---- Section heading ---- */
+.menu-card h2 {
+    font-size:26px;
+    letter-spacing:6px;
+    color:#ffffff;
+    text-shadow:0 0 16px rgba(255,255,255,0.4);
+    margin-bottom:28px;
+    text-transform:uppercase;
+}
+.gameover-title {
+    color:var(--red) !important;
+    text-shadow:var(--glow-r) !important;
+}
+
+/* ---- Buttons ---- */
+.btn-group {
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    align-items:center;
+}
+
+.mbtn {
+    width:240px;
+    padding:13px 24px;
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.18);
+    color:rgba(255,255,255,0.6);
+    font-family:var(--font);
+    font-size:12px;
+    letter-spacing:3px;
+    border-radius:3px;
+    cursor:pointer;
+    pointer-events:all;
+    transition:all 0.18s ease;
+    text-transform:uppercase;
+}
+.mbtn:hover {
+    background:rgba(255,255,255,0.08);
+    border-color:rgba(255,255,255,0.45);
+    color:#fff;
+    transform:translateY(-2px);
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+}
+.mbtn.primary {
+    background:rgba(0,255,136,0.08);
+    border-color:var(--green);
+    color:var(--green);
+}
+.mbtn.primary:hover {
+    background:rgba(0,255,136,0.18);
+    box-shadow:0 0 24px rgba(0,255,136,0.25);
+}
+
+/* ---- How to play table ---- */
+.key-table {
+    width:100%;
+    border-collapse:collapse;
+    margin:0 0 20px;
+    text-align:left;
+}
+.key-table tr {
+    border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.key-table td {
+    padding:9px 6px;
+    font-size:12px;
+    color:rgba(255,255,255,0.6);
+    vertical-align:middle;
+}
+.key-table td:first-child { width:130px; }
+
+kbd {
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.2);
+    border-radius:3px;
+    padding:2px 10px;
+    font-family:var(--font);
+    font-size:10px;
+    color:var(--green);
+    letter-spacing:1px;
+}
+
+.tip {
+    font-size:11px;
+    color:rgba(255,255,255,0.35);
+    line-height:1.6;
+    margin-bottom:24px;
+    letter-spacing:0.5px;
+}
+
+/* ---- Stats grid (game over) ---- */
+.stats-grid { margin:0 0 28px; }
+.stat-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    font-size:13px;
+}
+.stat-label { color:rgba(255,255,255,0.45); letter-spacing:2px; }
+.stat-val   { color:var(--green); font-size:22px; text-shadow:var(--glow-g); }
+
+/* ---- Menu footer ---- */
+.menu-foot {
+    margin-top:28px;
+    font-size:9px;
+    letter-spacing:2px;
+    color:rgba(255,255,255,0.15);
+}
+
+/* ================================================
+   LOADING SCREEN
+   ================================================ */
+#loading-screen {
+    position:fixed;
+    inset:0;
+    background:var(--darker);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:200;
+    transition:opacity 0.5s ease;
+}
+#loading-screen.fade { opacity:0; pointer-events:none; }
+
+.loading-inner { text-align:center; width:300px; }
+
+.loading-title {
+    font-size:42px;
+    font-weight:900;
+    letter-spacing:10px;
+    color:var(--green);
+    text-shadow:var(--glow-g), 0 0 40px rgba(0,255,136,0.2);
+    line-height:1.1;
+    margin-bottom:8px;
+}
+.loading-sub {
+    font-size:11px;
+    letter-spacing:6px;
+    color:rgba(255,255,255,0.3);
+    margin-bottom:32px;
+}
+.loading-bar-bg {
+    width:100%; height:3px;
+    background:rgba(255,255,255,0.08);
+    border-radius:2px;
+    overflow:hidden;
+    margin-bottom:14px;
+}
+#loading-bar {
+    height:100%;
+    width:0%;
+    background:var(--green);
+    box-shadow:0 0 10px var(--green);
+    transition:width 0.3s ease;
+}
+#loading-msg {
+    font-size:10px;
+    letter-spacing:3px;
+    color:rgba(255,255,255,0.3);
+}
+
+/* ================================================
+   RESPONSIVE ADJUSTMENTS
+   ================================================ */
+@media (max-width:768px) {
+    #health-bar-bg { width:130px; }
+    #stamina-bar-bg { width:80px; }
+    #ammo-display { font-size:18px; }
+    #kills-count, #wave-number { font-size:22px; }
+    #minimap-wrap { top:12px; right:12px; }
+    #minimap-canvas { width:110px; height:110px; }
+    #controls-hint { display:none; }
+    .menu-card { width:92vw; padding:28px 20px; }
+    .logo-zombie, .logo-strike { font-size:38px; }
+    .mbtn { width:200px; }
+    #hud { gap:14px; padding:12px 14px; }
+}
